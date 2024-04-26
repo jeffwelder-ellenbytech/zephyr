@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Jeff Welder
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    AMS OSRAM AS7331 Spectral UVA/B/C Sensor With I2C Interface.
+    See: https://look.ams-osram.com/m/1856fd2c69c35605/original/AS7331-Spectral-UVA-B-C-Sensor.pdf
+
+compatible: "ams,as7331"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  ready-gpios:
+    type: phandle-array
+    description: |
+      The READY pin of the AS7331:
+      Conversion status, configurable as push pull 
+      or open drain output stage (default push pull).
+  sync-gpios:
+    type: phandle-array
+    description: |
+      The SYN pin of the AS7331:
+      Input for external controlled conversion.

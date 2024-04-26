@@ -1,0 +1,9 @@
+sample:
+  description: Demonstration of the AMS AS7331 UV Sensor driver
+  name: AS7331 sample
+tests:
+  sample.sensor.as7331:
+    harness: sensor
+    tags: samples
+    depends_on:
+      - i2c

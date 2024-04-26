@@ -4,6 +4,7 @@
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_AMS_AS5600 ams_as5600)
 add_subdirectory_ifdef(CONFIG_AMS_IAQ_CORE ams_iAQcore)
+add_subdirectory_ifdef(CONFIG_AS7331 as7331)
 add_subdirectory_ifdef(CONFIG_CCS811 ccs811)
 add_subdirectory_ifdef(CONFIG_ENS210 ens210)
 add_subdirectory_ifdef(CONFIG_TCS3400 tcs3400)

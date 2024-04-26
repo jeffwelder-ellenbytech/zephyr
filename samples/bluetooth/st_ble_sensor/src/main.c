@@ -31,25 +31,24 @@ LOG_MODULE_REGISTER(main);
 static uint16_t but_val;
 
 /* Prototype */
-static ssize_t recv(struct bt_conn *conn,
-		    const struct bt_gatt_attr *attr, const void *buf,
+static ssize_t recv(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
 		    uint16_t len, uint16_t offset, uint8_t flags);
 
 /* ST Custom Service  */
-static const struct bt_uuid_128 st_service_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0x0000fe40, 0xcc7a, 0x482a, 0x984a, 0x7f2ed5b3e58f));
+static const struct bt_uuid_128 st_service_uuid =
+	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x0000fe40, 0xcc7a, 0x482a, 0x984a, 0x7f2ed5b3e58f));
 
 /* ST LED service */
-static const struct bt_uuid_128 led_char_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0x0000fe41, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
+static const struct bt_uuid_128 led_char_uuid =
+	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x0000fe41, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
 
 /* ST Notify button service */
-static const struct bt_uuid_128 but_notif_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0x0000fe42, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
+static const struct bt_uuid_128 but_notif_uuid =
+	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x0000fe42, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
-#define ADV_LEN 12
+#define ADV_LEN         12
 
 /* Advertising data */
 static uint8_t manuf_data[ADV_LEN] = {
@@ -70,8 +69,7 @@ static uint8_t manuf_data[ADV_LEN] = {
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-	BT_DATA(BT_DATA_MANUFACTURER_DATA, manuf_data, ADV_LEN)
-};
+	BT_DATA(BT_DATA_MANUFACTURER_DATA, manuf_data, ADV_LEN)};
 
 /* BLE connection */
 struct bt_conn *ble_conn;
@@ -91,18 +89,15 @@ static void mpu_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 
 /* ST BLE Sensor GATT services and characteristic */
 
-BT_GATT_SERVICE_DEFINE(stsensor_svc,
-BT_GATT_PRIMARY_SERVICE(&st_service_uuid),
-BT_GATT_CHARACTERISTIC(&led_char_uuid.uuid,
-		       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-		       BT_GATT_PERM_WRITE, NULL, recv, (void *)1),
-BT_GATT_CHARACTERISTIC(&but_notif_uuid.uuid, BT_GATT_CHRC_NOTIFY,
-		       BT_GATT_PERM_READ, NULL, NULL, &but_val),
-BT_GATT_CCC(mpu_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
-);
+BT_GATT_SERVICE_DEFINE(stsensor_svc, BT_GATT_PRIMARY_SERVICE(&st_service_uuid),
+		       BT_GATT_CHARACTERISTIC(&led_char_uuid.uuid,
+					      BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+					      BT_GATT_PERM_WRITE, NULL, recv, (void *)1),
+		       BT_GATT_CHARACTERISTIC(&but_notif_uuid.uuid, BT_GATT_CHRC_NOTIFY,
+					      BT_GATT_PERM_READ, NULL, NULL, &but_val),
+		       BT_GATT_CCC(mpu_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE), );
 
-static ssize_t recv(struct bt_conn *conn,
-		    const struct bt_gatt_attr *attr, const void *buf,
+static ssize_t recv(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
 		    uint16_t len, uint16_t offset, uint8_t flags)
 {
 	led_update();
@@ -110,16 +105,15 @@ static ssize_t recv(struct bt_conn *conn,
 	return 0;
 }
 
-static void button_callback(const struct device *gpiob, struct gpio_callback *cb,
-		     uint32_t pins)
+static void button_callback(const struct device *gpiob, struct gpio_callback *cb, uint32_t pins)
 {
 	int err;
 
 	LOG_INF("Button pressed");
 	if (ble_conn) {
 		if (notify_enable) {
-			err = bt_gatt_notify(NULL, &stsensor_svc.attrs[4],
-					     &but_val, sizeof(but_val));
+			err = bt_gatt_notify(NULL, &stsensor_svc.attrs[4], &but_val,
+					     sizeof(but_val));
 			if (err) {
 				LOG_ERR("Notify error: %d", err);
 			} else {
