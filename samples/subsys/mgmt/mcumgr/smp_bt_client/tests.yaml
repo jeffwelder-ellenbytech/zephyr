@@ -1,0 +1,18 @@
+sample:
+  name: SMP client (Bluetooth)
+  description: Upload a firmware image from a file system to a Bluetooth peer running smp_svr
+common:
+  tags:
+    - mgmt
+    - mcumgr
+    - bluetooth
+  # The sample needs a second board running smp_svr to talk to, so it is built but never
+  # executed by twister.
+  harness: bluetooth
+  platform_allow:
+    - nrf52840dk/nrf52840
+    - nrf54lm20dk/nrf54lm20a/cpuapp
+  integration_platforms:
+    - nrf52840dk/nrf52840
+tests:
+  sample.mcumgr.smp_bt_client: {}
