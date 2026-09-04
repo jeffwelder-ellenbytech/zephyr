@@ -1,0 +1,48 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# The transport under test is a GATT client, and this suite supplies the GATT client API
+# itself so that it can answer as an uncooperative peer would. CONFIG_BT_HCI is therefore
+# never set: subsys/bluetooth/CMakeLists.txt only adds the host under it, so the host is
+# not compiled and src/gatt_stub.c holds the only definitions of those entry points. The
+# symbols the transport needs are forced here because they are all inside "if BT" and so
+# cannot be reached from prj.conf with the Bluetooth stack left out. Same technique, and
+# for the same reason, as tests/bluetooth/audio.
+
+config BT_CONN
+	bool
+	default y
+
+config BT_CENTRAL
+	bool
+	default y
+
+config BT_GATT_CLIENT
+	bool
+	default y
+
+config BT_MAX_CONN
+	int
+	default 2
+
+config BT_MAX_PAIRED
+	int
+	default 1
+
+config BT_ATT_TX_COUNT
+	int
+	default 3
+
+config BT_L2CAP_TX_MTU
+	int
+	default 247
+
+config MCUMGR_TRANSPORT_BT_CLIENT
+	bool
+	default y
+
+source "Kconfig.zephyr"

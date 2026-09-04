@@ -1,0 +1,18 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  mgmt.mcumgr.transport.bt_client.gatt_stub:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    timeout: 120
+    tags:
+      - mgmt
+      - mcumgr
+      - transport
+      - bluetooth
