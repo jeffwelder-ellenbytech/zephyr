@@ -297,6 +297,8 @@ enum smp_transport_type {
 	SMP_LORAWAN_TRANSPORT,
 	/** SMP SPI */
 	SMP_SPI_TRANSPORT,
+	/** SMP Bluetooth client, i.e. this device in the central role */
+	SMP_BLUETOOTH_CLIENT_TRANSPORT,
 
 	/** IDs up to 63 reserved for future in-tree transports */
 

@@ -111,3 +111,67 @@ config MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
 	  will be statically defined and registered.
 
 endif # MCUMGR_TRANSPORT_BT
+
+# The client transport cannot live inside the "if MCUMGR_TRANSPORT_BT" block above:
+# that symbol depends on BT_PERIPHERAL, and the GATT client role does not.
+
+menuconfig MCUMGR_TRANSPORT_BT_CLIENT
+	bool "Bluetooth client MCUmgr SMP transport [EXPERIMENTAL]"
+	depends on BT_GATT_CLIENT && SMP_CLIENT
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	select EXPERIMENTAL
+	help
+	  Enables sending of SMP commands to a Bluetooth peer that runs the SMP service, with
+	  this device as the GATT client. It is the counterpart of MCUMGR_TRANSPORT_BT, which
+	  is the GATT server side of the same service, and the two are independent: a device
+	  may enable both and act as an SMP server towards one peer while acting as an SMP
+	  client towards another.
+
+	  Only the GATT client role is required, not the central GAP role: a peripheral may
+	  discover and subscribe on a link that the remote central opened.
+
+	  The transport discovers the SMP service on a connected peer, subscribes to its
+	  notifications, and splits every outbound SMP packet into ATT_MTU-3 sized writes
+	  without response. It registers itself as an SMP client transport of type
+	  SMP_BLUETOOTH_CLIENT_TRANSPORT, and supports one target at a time.
+
+	  The central side of the link has to raise the ATT MTU, for instance with
+	  BT_GATT_AUTO_UPDATE_MTU, or every fragment is the 20 bytes that the default ATT MTU
+	  of 23 leaves.
+
+	  MCUMGR_TRANSPORT_NETBUF_SIZE has to be agreed with the peer. The image upload
+	  client sizes every upload frame from it without consulting the transport MTU, so
+	  a value larger than the peer's own MCUMGR_TRANSPORT_NETBUF_SIZE makes the peer
+	  reject the first frame it cannot reassemble.
+
+if MCUMGR_TRANSPORT_BT_CLIENT
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS
+	int "Bluetooth client SMP transmit credits"
+	range 1 255
+	default 2
+	help
+	  Number of write without response fragments this transport may have in flight at
+	  once. Each fragment takes one credit before it is written and returns it from
+	  the write completion callback, which both throttles the transport to a share of
+	  the ATT transmit buffers and keeps the transmit path from polling on the MCUmgr
+	  work queue.
+
+	  This must not exceed BT_ATT_TX_COUNT, and a build assertion enforces it. A
+	  credit is returned only after the buffer it stands for has already gone back to
+	  the ATT transmit pool, so more credits than buffers lets a fragment take a
+	  credit and then block inside the Bluetooth host with no timeout at all. Leaving
+	  headroom below BT_ATT_TX_COUNT also keeps other users of the connection, such as
+	  a co-resident SMP server, from being starved.
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDIT_TIMEOUT
+	int "Bluetooth client SMP transmit credit timeout in milliseconds"
+	range 1 10000
+	default 500
+	help
+	  How long a fragment waits for a transmit credit before the packet is dropped.
+	  A dropped packet is not fatal: writes without response are not acknowledged at
+	  the ATT layer anyway, so a lost packet surfaces as an SMP client timeout and is
+	  retried. Waiting longer holds up the MCUmgr work queue for the whole duration.
+
+endif # MCUMGR_TRANSPORT_BT_CLIENT

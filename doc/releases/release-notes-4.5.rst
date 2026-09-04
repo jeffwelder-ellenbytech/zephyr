@@ -528,6 +528,10 @@ New APIs and options
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION` and
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS`.
 
+    * Added experimental support for Bluetooth client MCUmgr SMP transport, which allows a
+      device to manage a peer that runs the SMP service, and which can be enabled with
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT`.
+
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.

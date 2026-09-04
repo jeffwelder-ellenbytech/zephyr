@@ -28,6 +28,49 @@ split among several packets. Since GATT guarantees ordered delivery of
 packets, the SMP header in the first fragment contains sufficient information
 for reassembly.
 
+.. _mcumgr_smp_transport_ble_client:
+
+Client transport
+================
+
+Zephyr implements both ends of the above. :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT` is the
+GATT server side, which publishes the SMP service, and
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT` is the experimental GATT client side, which
+lets a device running the MCUmgr SMP client (:kconfig:option:`CONFIG_SMP_CLIENT`) manage a peer
+that publishes that service. The two are independent, so a device may enable both and be an
+SMP server towards one peer while being an SMP client towards another. Establishing the
+connection is left to the application, which hands the transport a connected peer:
+
+.. code-block:: c
+
+   static struct smp_client_object smp_client;
+
+   int rc;
+
+   /* conn is an established connection to the peer that runs the SMP service. */
+   rc = smp_client_object_init(&smp_client, SMP_BLUETOOTH_CLIENT_TRANSPORT);
+   if (rc == 0) {
+       rc = smp_bt_client_attach(conn, K_SECONDS(5));
+   }
+
+:c:func:`smp_bt_client_attach` carries out the whole discovery and subscription sequence
+before it returns, so it blocks the calling thread and must not be called from a work queue
+item, and in particular never from the MCUmgr work queue that later runs the transmit path.
+The target is released by :c:func:`smp_bt_client_detach`, or automatically when the peer
+disconnects, and :c:func:`smp_bt_client_is_attached` reports whether one is attached.
+
+Only one target can be attached at a time. The restriction is structural rather than
+advisory: there is a single transport object, whose packet reassembly context and connection
+are both singletons, so attaching while another target is attached fails with ``-EBUSY``.
+
+Notifications are handed to the SMP core exactly as every other transport hands on what it
+receives, so a request the peer sends is executed by whatever management groups the image
+serves. Restrict the groups, or use the MCUmgr management hooks described in
+:ref:`mcumgr_callbacks`, if that is not wanted.
+
+The Kconfig options under :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT` cover sizing the
+SMP buffers for the peer and how many outbound fragments may be in flight at once.
+
 .. _mcumgr_smp_transport_uart:
 
 UART/serial and console
@@ -224,3 +267,5 @@ API Reference
 *************
 
 .. doxygengroup:: mcumgr_transport_smp
+
+.. doxygengroup:: mcumgr_transport_bt_client
