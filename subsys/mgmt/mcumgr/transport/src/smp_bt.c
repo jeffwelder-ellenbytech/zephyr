@@ -679,7 +679,10 @@ static void smp_bt_setup(void)
 	if (rc == 0) {
 		smp_client_transport.smpt = &smp_bt_transport;
 		smp_client_transport.smpt_type = SMP_BLUETOOTH_TRANSPORT;
-		smp_client_transport_register(&smp_client_transport);
+
+		if (smp_client_transport_register(&smp_client_transport) == -EEXIST) {
+			LOG_ERR("SMP Bluetooth client transport type already claimed");
+		}
 	}
 #endif
 

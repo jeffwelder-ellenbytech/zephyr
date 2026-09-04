@@ -1900,6 +1900,10 @@ MCUmgr
   :ref:`mcumgr_os_application_info` command now always reports the board target as hardware
   platform; the pre-4.3 board and board revision output is no longer available.
 
+* :c:func:`smp_client_transport_register` now returns ``int``: ``0`` when the transport is
+  registered, and ``-EEXIST`` when another transport has already claimed its type, in which case
+  it is not registered. Callers that go on ignoring the result should cast it to ``void``.
+
 Random
 ======
 
