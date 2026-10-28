@@ -26,6 +26,8 @@
 #include <mgmt/mcumgr/transport/smp_reassembly.h>
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
+#include <string.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #include <zcbor_common.h>
@@ -663,6 +665,39 @@ int smp_bt_unregister(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
+/* The bridged peer is an SMP server, so only responses are expected from it */
+static bool smp_bt_bridge_is_response(const struct smp_hdr *hdr)
+{
+	return hdr->nh_op == MGMT_OP_READ_RSP || hdr->nh_op == MGMT_OP_WRITE_RSP;
+}
+
+#ifndef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
+/* Checks that every packet in a notification from the bridged peer is a whole response */
+static bool smp_bt_bridge_only_responses(const uint8_t *data, size_t len)
+{
+	while (len > 0U) {
+		struct smp_hdr hdr;
+		size_t packet_len;
+
+		if (len < sizeof(hdr)) {
+			return false;
+		}
+
+		memcpy(&hdr, data, sizeof(hdr));
+		packet_len = sizeof(hdr) + sys_be16_to_cpu(hdr.nh_len);
+
+		if (!smp_bt_bridge_is_response(&hdr) || packet_len > len) {
+			return false;
+		}
+
+		data += packet_len;
+		len -= packet_len;
+	}
+
+	return true;
+}
+#endif
+
 static uint8_t smp_bt_bridge_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 				    const void *data, uint16_t len)
 {
@@ -689,6 +724,18 @@ static uint8_t smp_bt_bridge_notify(struct bt_conn *conn, struct bt_gatt_subscri
 
 	LOG_DBG("started = %s, buf len = %d", started ? "true" : "false", len);
 	LOG_HEXDUMP_DBG(buf, len, "buf = ");
+
+	/* The first fragment of a packet holds its header */
+	if (!started && len >= sizeof(struct smp_hdr)) {
+		struct smp_hdr hdr;
+
+		memcpy(&hdr, buf, sizeof(hdr));
+
+		if (!smp_bt_bridge_is_response(&hdr)) {
+			LOG_DBG("Ignoring SMP packet from bridged peer: not a response");
+			return BT_GATT_ITER_CONTINUE;
+		}
+	}
 
 	ret = smp_reassembly_collect(&smp_bt_transport, buf, len);
 	LOG_DBG("collect = %d", ret);
@@ -744,6 +791,11 @@ static uint8_t smp_bt_bridge_notify(struct bt_conn *conn, struct bt_gatt_subscri
 
 	if (cpd == NULL) {
 		LOG_ERR("NULL cpd object for connection %p", (void *)conn);
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	if (!smp_bt_bridge_only_responses(data, len)) {
+		LOG_DBG("Ignoring notification from bridged peer: not only complete responses");
 		return BT_GATT_ITER_CONTINUE;
 	}
 
